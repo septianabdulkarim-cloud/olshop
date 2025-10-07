@@ -8,5 +8,5 @@ Flask-Bootstrap==3.3.7.1
 reportlab==4.4.4
 requests==2.31.0
 gunicorn==21.2.0
-
+Werkzeug==2.3.7
 
