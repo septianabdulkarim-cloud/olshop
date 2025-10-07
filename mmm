@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    /* Sidebar Styling */
+    #sidebar {
+        position: fixed;
+        left: -260px; /* ngumpet default */
+        top: 0;
+        height: 100vh;
+        width: 240px;
+        background: linear-gradient(180deg, #1e1e2f, #2c2c3c);
+        color: #fff;
+        padding: 20px 15px;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        transition: left 0.3s ease;
+        z-index: 1050;
+        overflow-y: auto;
+    }
+
+    #sidebar.active {
+        left: 0; /* muncul kalau aktif */
+    }
+
+    #sidebar h3 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 30px;
+        text-align: center;
+        color: #f8f9fa;
+    }
+
+    #sidebar .nav-link {
+        padding: 10px 15px;
+        margin: 4px 0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        color: #ddd;
+        font-weight: 500;
+    }
+
+    #sidebar .nav-link:hover,
+    #sidebar .nav-link.active {
+        background: #4e73df;
+        color: #fff !important;
+        font-weight: 600;
+    }
+
+    /* Content Area */
+    #content {
+        margin-left: 0;
+        padding: 30px;
+        min-height: 100vh;
+        background: #f8f9fc;
+        transition: margin-left 0.3s ease;
+        width: 100%;
+    }
+
+    #content.shifted {
+        margin-left: 260px; /* kalau sidebar aktif konten geser */
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        color: #333;
+    }
+
+    /* Card Produk */
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+        background: #fff;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-body h5 {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    /* Table Styling */
+    .table-responsive {
+        margin-left: -10px; /* geser tabel agak kiri */
+    }
+
+    table {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        width: 100%;
+    }
+
+    thead {
+        background: #4e73df;
+        color: #fff;
+    }
+
+    thead th {
+        padding: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    tbody td {
+        padding: 14px 12px !important;
+        vertical-align: middle;
+        font-size: 14px;
+    }
+
+    .form-select-sm {
+        font-size: 14px;
+        padding: 4px 8px;
+    }
+
+    /* Responsif untuk HP */
+    @media (max-width: 992px) {
+        #content.shifted {
+            margin-left: 0 !important;
+        }
+
+        #sidebar {
+            left: -260px; /* tetap ngumpet default */
+        }
+
+        .navbar .btn {
+            font-size: 18px;
+            padding: 6px 10px;
+        }
+
+        .section-title {
+            font-size: 20px;
+        }
+
+        .product-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .card {
+            width: 100% !important;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table th, table td {
+            font-size: 12px;
+            padding: 10px 6px !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .product-grid {
+            grid-template-columns: 1fr; /* di HP kecil 1 kolom */
+        }
+    }
+</style>
+
+<!-- Navbar dengan tombol toggle -->
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <button id="sidebarToggle" class="btn btn-outline-light me-2">
+            ☰
+        </button>
+        <a class="navbar-brand" href="#">Admin Panel</a>
+    </div>
+</nav>
+
+<div class="d-flex">
+    <!-- Sidebar kiri -->
+    <div id="sidebar" class="d-flex flex-column">
+        <h3>Admin Panel</h3>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" data-target="dashboard">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-target="add-product">Tambah Produk</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-target="featured-products">Produk Unggulan</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-target="best-sellers">Produk Terlaris</a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-target="transactions">Transaksi</a>
+            </li>
+            <li class="nav-item mt-auto">
+                <a href="{{ url_for('logout') }}" class="nav-link text-danger fw-bold">Logout</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Konten kanan -->
+    <div id="content" class="flex-grow-1">
+
+        <!-- Dashboard Produk -->
+        <div id="dashboard-section">
+            <h1 class="section-title">Daftar Produk</h1>
+            <div class="product-grid">
+                {% for p in products %}
+                <div class="card">
+                    <img src="{{ url_for('static', filename='uploads/' + p.image) if p.image else 'https://via.placeholder.com/200' }}" 
+                         class="card-img-top" alt="{{ p.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ p.name }}</h5>
+                        <p class="card-text">Rp {{ "{:,.0f}".format(p.price) }}</p>
+                        <p class="card-text"><b>Stok:</b> {{ p.stock }}</p>
+
+                        <!-- Update stok langsung -->
+                        <form method="POST" action="{{ url_for('update_stock', product_id=p.id) }}" class="d-flex gap-2">
+                            <input type="number" name="stock" value="{{ p.stock }}" min="0" class="form-control form-control-sm" style="width:80px;">
+                            <button type="submit" class="btn btn-sm btn-warning">Update</button>
+                        </form>
+
+                        <!-- Tandai sebagai unggulan -->
+                        <form method="POST" action="{{ url_for('toggle_featured', product_id=p.id) }}" class="mt-2">
+                            <button type="submit" class="btn btn-sm {% if p.is_featured %}btn-success{% else %}btn-secondary{% endif %}">
+                                {% if p.is_featured %}✔ Unggulan{% else %}+ Jadikan Unggulan{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tambah Produk -->
+        <div id="add-product-section" style="display:none;">
+            <h1 class="section-title">Tambah Produk Baru</h1>
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('add_product') }}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nama Produk</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Deskripsi</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Harga</label>
+                    <input type="number" class="form-control" id="price" name="price" required step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label for="stock" class="form-label">Stok</label>
+                    <input type="number" class="form-control" id="stock" name="stock" required>
+                </div>
+                <div class="mb-3">
+                    <label for="image" class="form-label">Gambar</label>
+                    <input class="form-control" type="file" id="image" name="image" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-success">Tambah Produk</button>
+            </form>
+        </div>
+
+        <!-- Produk Unggulan -->
+        <div id="featured-products-section" style="display:none;">
+            <h1 class="section-title">Produk Unggulan</h1>
+            <div class="product-grid">
+                {% for p in featured_products %}
+                <div class="card">
+                    <img src="{{ url_for('static', filename='uploads/' + p.image) if p.image else 'https://via.placeholder.com/200' }}" class="card-img-top">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ p.name }}</h5>
+                        <p class="card-text">Rp {{ "{:,.0f}".format(p.price) }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Produk Terlaris -->
+        <div id="best-sellers-section" style="display:none;">
+            <h1 class="section-title">Produk Terlaris</h1>
+            <div class="product-grid">
+                {% for p in best_sellers %}
+                <div class="card">
+                    <img src="{{ url_for('static', filename='uploads/' + p.image) if p.image else 'https://via.placeholder.com/200' }}" class="card-img-top">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ p.name }}</h5>
+                        <p class="card-text">Terjual: {{ p.total_sold }}</p>
+                        <p class="card-text">Rp {{ "{:,.0f}".format(p.price) }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Transaksi -->
+        <div id="transactions-section" style="display:none;">
+            <h1 class="section-title">Daftar Transaksi</h1>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>No. Telepon</th>
+                            <th>Kota</th>
+                            <th>Kode Pos</th>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                            <th>RT</th>
+                            <th>RW</th>
+                            <th>Kecamatan</th>
+                            <th>Kelurahan</th>
+                            <th>Provinsi</th>
+                            <th>Status</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transactions %}
+                        <tr>
+                            <td>{{ t.id }}</td>
+                            <td>{{ t.user.name }}</td>
+                            <td>{{ t.user.phone }}</td>
+                            <td>{{ t.user.kota }}</td>
+                            <td>{{ t.user.kode_pos }}</td>
+                            <td>{{ t.product.name }}</td>
+                            <td>{{ t.quantity }}</td>
+                            <td>Rp {{ "{:,.0f}".format(t.total_price) }}</td>
+                            <td>{{ t.user.rt }}</td>
+                            <td>{{ t.user.rw }}</td>
+                            <td>{{ t.user.kecamatan }}</td>
+                            <td>{{ t.user.kelurahan }}</td>
+                            <td>{{ t.user.provinsi }}</td>
+                            <td>
+                                <form action="{{ url_for('update_status', transaction_id=t.id) }}" method="POST">
+                                    <select name="status" onchange="this.form.submit()" class="form-select form-select-sm">
+                                        <option value="pending" {% if t.status=='pending' %}selected{% endif %}>Pending</option>
+                                        <option value="processing" {% if t.status=='processing' %}selected{% endif %}>Processing</option>
+                                        <option value="shipped" {% if t.status=='shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="completed" {% if t.status=='completed' %}selected{% endif %}>Completed</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td>{{ t.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const content = document.getElementById('content');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+        content.classList.toggle('shifted');
+    });
+
+    // Nav menu klik
+    const navLinks = document.querySelectorAll('[data-target]');
+    const sections = {
+        'dashboard': document.getElementById('dashboard-section'),
+        'add-product': document.getElementById('add-product-section'),
+        'featured-products': document.getElementById('featured-products-section'),
+        'best-sellers': document.getElementById('best-sellers-section'),
+        'transactions': document.getElementById('transactions-section')
+    };
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+            Object.values(sections).forEach(sec => sec.style.display = 'none');
+            const target = this.getAttribute('data-target');
+            sections[target].style.display = 'block';
+        });
+    });
+</script>
+{% endblock %}

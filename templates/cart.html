@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="cart-section" style="padding: 60px 20px;">
+    <div class="container" style="max-width: 1000px; margin: auto;">
+        <h1 class="section-title" style="margin-bottom: 40px;">Keranjang Belanja</h1>
+
+        {% if products %}
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+                <tr style="background: #007bff; color: #fff; text-align: left;">
+                    <th style="padding: 12px;">Produk</th>
+                    <th style="padding: 12px;">Harga</th>
+                    <th style="padding: 12px;">Jumlah</th>
+                    <th style="padding: 12px;">Subtotal</th>
+                    <th style="padding: 12px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in products %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 12px; display: flex; align-items: center; gap: 15px;">
+                        <img src="{{ url_for('static', filename='uploads/' + item.product.image) if item.product.image else 'https://via.placeholder.com/80' }}" alt="{{ item.product.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 10px;">
+                        {{ item.product.name }}
+                    </td>
+                    <td style="padding: 12px;">Rp {{ "{:,.0f}".format(item.product.price) }}</td>
+                    <td style="padding: 12px;">{{ item.qty }}</td>
+                    <td style="padding: 12px;">Rp {{ "{:,.0f}".format(item.subtotal) }}</td>
+                    <td style="padding: 12px;">
+                        <a href="{{ url_for('remove_from_cart', product_id=item.product.id) }}" class="btn btn-danger" style="padding: 6px 12px; border-radius: 8px;">Hapus</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="text-align: right; font-size: 1.2rem; font-weight: 600; margin-bottom: 20px;">
+            Total: Rp {{ "{:,.0f}".format(total) }}
+        </div>
+
+        <div style="text-align: right;">
+            <a href="{{ url_for('checkout') }}" class="btn btn-success" style="padding: 12px 25px; font-weight: 600; border-radius: 12px;">Checkout</a>
+        </div>
+
+        {% else %}
+        <p style="text-align: center; font-size: 1.2rem;">Keranjang kosong. <a href="{{ url_for('index') }}">Kembali ke produk</a></p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

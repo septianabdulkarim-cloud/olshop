@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="product-detail-section" style="padding: 60px 20px;">
+    <div class="container" style="max-width: 900px; margin: auto; display: flex; gap: 40px; flex-wrap: wrap;">
+        <!-- Gambar Produk -->
+        <div class="product-image" style="flex: 1; min-width: 300px;">
+            <img src="{{ url_for('static', filename='uploads/' + product.image) if product.image else 'https://via.placeholder.com/400' }}" 
+                 alt="{{ product.name }}" style="width: 100%; border-radius: 15px; object-fit: cover;">
+        </div>
+
+        <!-- Info Produk -->
+        <div class="product-info" style="flex: 1; min-width: 300px;">
+            <h1 style="font-size: 2rem; margin-bottom: 20px;">{{ product.name }}</h1>
+            
+            <!-- Harga Produk -->
+            <p style="font-size: 1.2rem; color: #ff4c4c; margin-bottom: 10px;">
+                Rp {{ "{:,.0f}".format(product.price) }}
+            </p>
+
+            <!-- Berat Produk -->
+            <p style="font-size: 1rem; color: #555; margin-bottom: 15px;">
+                Berat: {{ "{:.2f}".format(product.weight) }} kg
+            </p>
+
+            <!-- Deskripsi -->
+            <p style="margin-bottom: 25px; line-height: 1.6;">
+                {{ product.description or 'Deskripsi produk belum tersedia.' }}
+            </p>
+
+            <!-- Form Tambah ke Keranjang / Beli Sekarang -->
+            <form method="get">
+                <div style="margin-bottom: 15px;">
+                    <label for="quantity">Jumlah:</label>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ product.stock }}" style="width: 80px; padding: 5px; margin-left: 10px;">
+                </div>
+
+                <!-- Tombol Tambah ke Keranjang -->
+                <button type="submit" formaction="{{ url_for('add_to_cart', product_id=product.id) }}" 
+                        class="btn btn-success" style="padding: 10px 25px; font-weight: 600; border-radius: 12px; margin-right:10px;">
+                    Tambah ke Keranjang
+                </button>
+
+                <!-- Tombol Beli Sekarang -->
+                <button type="submit" formaction="{{ url_for('checkout') }}" 
+                        class="btn btn-primary" style="padding: 10px 25px; font-weight: 600; border-radius: 12px;">
+                    Beli Sekarang
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

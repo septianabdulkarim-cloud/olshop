@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="transactions-section" style="padding: 60px 20px;">
+    <div class="container" style="max-width: 1000px; margin: auto;">
+        <h1 class="section-title" style="margin-bottom: 40px;">Riwayat Transaksi</h1>
+
+        {% if transactions %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #007bff; color: #fff; text-align: left;">
+                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px;">Produk</th>
+                    <th style="padding: 12px;">Jumlah</th>
+                    <th style="padding: 12px;">Total Harga</th>
+                    <th style="padding: 12px;">Pembayaran</th>
+                    <th style="padding: 12px;">Pengiriman</th>
+                    <th style="padding: 12px;">Status</th>
+                    <th style="padding: 12px;">Tanggal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 12px;">{{ t.id }}</td>
+                    <td style="padding: 12px;">{{ t.product.name }}</td>
+                    <td style="padding: 12px;">{{ t.quantity }}</td>
+                    <td style="padding: 12px;">Rp {{ "{:,.0f}".format(t.total_price) }}</td>
+                    <td style="padding: 12px;">{{ t.payment_method }}</td>
+                    <td style="padding: 12px;">{{ t.shipping_method }}</td>
+                    <td style="padding: 12px;">{{ t.status }}</td>
+                    <td style="padding: 12px;">{{ t.created_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align: center; font-size: 1.2rem;">Belum ada transaksi. <a href="{{ url_for('index') }}">Kembali ke produk</a></p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

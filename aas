@@ -1,0 +1,127 @@
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    # Ambil keranjang dari session
+    cart = session.get('cart', {})
+    if not cart:
+        flash("Keranjang kosong!", "warning")
+        return redirect(url_for('index'))
+
+    # Ambil semua produk di cart
+    products = []
+    total = 0
+    for pid, qty in cart.items():
+        product = Product.query.get(int(pid))
+        if product:
+            subtotal = product.price * qty
+            products.append({
+                'product': product,
+                'qty': qty,
+                'subtotal': subtotal
+            })
+            total += subtotal
+
+    # Ambil data user
+    user = current_user
+
+    if request.method == 'POST':
+        shipping_method = request.form.get('shipping_method')
+        if shipping_method not in SHIPPING_METHODS:
+            flash('Metode pengiriman tidak valid!', 'danger')
+            return redirect(url_for('checkout'))
+
+        # Buat transaksi di DB
+        transaction_items = []
+        for item in products:
+            product = item['product']
+            qty = item['qty']
+
+            # Cek stok
+            if product.category != 'preorder' and product.stock < qty:
+                flash(f"Stok {product.name} tidak mencukupi!", "danger")
+                return redirect(url_for('view_cart'))
+
+            # Update stok
+            if product.category != 'preorder':
+                product.stock -= qty
+                if product.stock <= 0:
+                    product.is_active = False
+
+            # Simpan transaksi
+            transaction = Transaction(
+                user_id=user.id,
+                product_id=product.id,
+                quantity=qty,
+                total_price=product.price * qty,
+                payment_method='Midtrans',
+                shipping_method=shipping_method,
+                status='pending',
+                phone=user.phone,          # Nomor telepon
+                kota=user.kota,            # Kota
+                kode_pos=user.kode_pos     # Kode pos
+            )
+            db.session.add(transaction)
+            transaction_items.append(transaction)
+
+        db.session.commit()
+
+        # ===== Midtrans Snap Token =====
+        client = midtransclient.Snap(
+            is_production=False,
+            server_key='YOUR_SERVER_KEY',
+            client_key='YOUR_CLIENT_KEY'
+        )
+
+        order_id = f"ORDER-{user.id}-{int(datetime.utcnow().timestamp())}"
+        transaction_details = {
+            "order_id": order_id,
+            "gross_amount": total
+        }
+
+        item_details = []
+        for item in products:
+            item_details.append({
+                "id": str(item['product'].id),
+                "price": item['product'].price,
+                "quantity": item['qty'],
+                "name": item['product'].name
+            })
+
+        customer_details = {
+            "first_name": user.name,
+            "email": user.email,
+            "phone": user.phone or "081234567890",
+            "billing_address": {
+                "first_name": user.name,
+                "address": user.alamat,
+                "city": user.kota or user.kecamatan,
+                "postal_code": user.kode_pos or "00000",
+                "phone": user.phone or "081234567890",
+                "country_code": "IDN"
+            }
+        }
+
+        snap_payload = {
+            "transaction_details": transaction_details,
+            "item_details": item_details,
+            "customer_details": customer_details,
+            "enabled_payments": ["gopay","bank_transfer","credit_card","shopeepay","qris"],
+            "credit_card": {"secure": True}
+        }
+
+        snap_response = client.create_transaction(snap_payload)
+        snap_token = snap_response['token']
+
+        # Kosongkan cart
+        session['cart'] = {}
+        flash('Checkout berhasil! Silakan lanjutkan pembayaran.', 'success')
+        return render_template('midtrans_payment.html', snap_token=snap_token, total=total, order_id=order_id)
+
+    # GET request, tampilkan halaman checkout
+    return render_template(
+        'checkout.html',
+        products=products,
+        total=total,
+        user=user,
+        shipping_methods=SHIPPING_METHODS
+    )
